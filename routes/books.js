@@ -1,31 +1,71 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const {Book} = require('../models/books');
+const { Book, validateBook } = require("../models/books");
 
+//POST: CREATE A NEW BOOK
+router.post("/", async (req, res) => {
+  const error = await validateBook(req.body);
+  if (error.message) return res.status(400).send(error.message);
 
-
-// post: creat a new Book
-router.post('/',(req, res) => {
-    // const error = await validateBook(req.body);
-    // if (error.message) res.status(400).send(error.message);
-  
-    book = new Book({
-      name:req.body.bookName,
-      author:{
-        name:req.body.authorName,
-        age:req.body.authorAge,
-      },
-      gener:req.body.gener,
-    });
-  
-    book
-      .save()
-      .then((book) => {
-        res.send(book);
-      })
-      .catch((error) => {
-        res.status(500).send("Book was not stored in db");
-      });
+  book = new Book({
+    name: req.body.bookName,
+    author: {
+      name: req.body.authorName,
+      age: req.body.authorAge,
+    },
+    genre: req.body.genre,
   });
+
+  book
+    .save()
+    .then((book) => {
+      return res.send(book);
+    })
+    .catch((error) => {
+      return res.status(500).send("Book was not stored in db");
+    });
+});
+
+// GET ALL Books
+router.get("/", (req,res) =>{
+  Book.find()
+  .then((books) =>
+     res.send(books))
+  .catch((error)=>{
+    return res.status(500).send("somthing went wrong");
+  });
+});
+
+// GET THE BOOK BY ID
+router.get("/:bookId", async (req, res) => {
+  const book = await Book.findById(req.params.bookId);
+  if (!book) res.status(404).send("Book not found");
+  res.send(book);
+});
+// update BOOK BASED ON ID
+router.put("/:bookId", async (req, res) => {
+  const updatedBook = await Book.findByIdAndUpdate(
+    req.params.bookId,
+    {
+      name: req.body.bookName,
+      author: {
+        name: req.body.authorName,
+        age: req.body.authorAge,
+      },
+      genre: req.body.genre,
+    },
+    { new: true }
+  );
+
+  if (!updatedBook) res.status(404).send("book nont found");
+  res.send(updatedBook);
+});
+//DELETE BOOK BASED ON ID
+router.delete("/:bookId", async (req, res) => {
+  const book = await Book.findByIdAndRemove(req.params.bookId);
+  if (!book) res.status(404).send("book with id not found");
+  res.send(book);
+});
+
 
 module.exports = router;
